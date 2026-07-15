@@ -46,3 +46,6 @@ assets.zip
 /assets/
 /schema.sql
 /sistemas_desarrollo/
+
+# Paquetes de despliegue generados (zip del backend, SQL de producción)
+/deploy/
