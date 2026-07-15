@@ -1,0 +1,48 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (contienen credenciales reales)
+.env
+.env.local
+backend/.env
+backend/.env.local
+
+# Builds
+frontend/dist/
+backend/public/
+
+# Archivos subidos por usuarios (PDFs de romaneaje) — no versionar
+backend/uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Empaquetado de assets (ya vive descomprimido en assets/)
+assets.zip
+
+# Herramientas del agente (no es parte del proyecto)
+/.claude/
+
+# Snapshot viejo en la raíz (previo a la reestructura backend/ + frontend/,
+# incluye un build ya compilado y rutas ya renombradas como bajas.js) — se
+# deja en disco por si sirve de referencia, pero no se versiona para no
+# confundir con el código activo.
+/src/
+/public/
+/setup.js
+/package.json
+/package-lock.json
+/index.html
+/icons.svg
+/logo-anden.png
+/assets/
+/schema.sql
+/sistemas_desarrollo/
