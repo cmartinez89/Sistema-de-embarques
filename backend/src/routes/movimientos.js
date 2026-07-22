@@ -115,10 +115,21 @@ router.put('/:id/autorizar', auth, requireAdmin, async (req, res) => {
   const mov = memMovimientos.find(m => m.id === Number(req.params.id));
   if (!mov) return res.status(404).json({ error: 'No encontrado' });
   if (mov.estado !== 'pendiente') return res.status(400).json({ error: 'Este movimiento ya fue procesado' });
+  const antes = { ...mov };
   mov.estado = 'autorizado';
   mov.autorizado_por = req.user?.id || null;
   mov.fecha_autorizacion = new Date().toISOString();
   mov.comentario_autorizacion = comentario || null;
+  await registrarBitacora(pool, {
+    usuario_id: req.user?.id,
+    usuario_nombre: req.user?.usuario,
+    accion: 'autorizar',
+    tabla: 'movimientos_inventario',
+    registro_id: req.params.id,
+    justificacion: comentario || 'Autorizado sin comentarios',
+    datos_antes: antes,
+    datos_despues: mov,
+  });
   res.json(mov);
 });
 
@@ -157,10 +168,21 @@ router.put('/:id/rechazar', auth, requireAdmin, async (req, res) => {
   const mov = memMovimientos.find(m => m.id === Number(req.params.id));
   if (!mov) return res.status(404).json({ error: 'No encontrado' });
   if (mov.estado !== 'pendiente') return res.status(400).json({ error: 'Este movimiento ya fue procesado' });
+  const antes = { ...mov };
   mov.estado = 'rechazado';
   mov.autorizado_por = req.user?.id || null;
   mov.fecha_autorizacion = new Date().toISOString();
   mov.comentario_autorizacion = comentario;
+  await registrarBitacora(pool, {
+    usuario_id: req.user?.id,
+    usuario_nombre: req.user?.usuario,
+    accion: 'rechazar',
+    tabla: 'movimientos_inventario',
+    registro_id: req.params.id,
+    justificacion: comentario,
+    datos_antes: antes,
+    datos_despues: mov,
+  });
   res.json(mov);
 });
 
@@ -203,7 +225,18 @@ router.put('/:id', auth, async (req, res) => {
   if (memMovimientos[idx].estado !== 'pendiente') {
     return res.status(400).json({ error: 'Solo se pueden editar movimientos pendientes de autorización' });
   }
+  const antes = memMovimientos[idx];
   memMovimientos[idx] = { ...memMovimientos[idx], ...req.body };
+  await registrarBitacora(pool, {
+    usuario_id: req.user?.id,
+    usuario_nombre: req.user?.usuario,
+    accion: 'editar',
+    tabla: 'movimientos_inventario',
+    registro_id: req.params.id,
+    justificacion,
+    datos_antes: antes,
+    datos_despues: memMovimientos[idx],
+  });
   res.json(memMovimientos[idx]);
 });
 
@@ -232,8 +265,19 @@ router.delete('/:id', auth, async (req, res) => {
 
   const idx = memMovimientos.findIndex(m => m.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
-  memMovimientos.splice(idx, 1);
+  const [eliminado] = memMovimientos.splice(idx, 1);
+  await registrarBitacora(pool, {
+    usuario_id: req.user?.id,
+    usuario_nombre: req.user?.usuario,
+    accion: 'eliminar',
+    tabla: 'movimientos_inventario',
+    registro_id: req.params.id,
+    justificacion,
+    datos_antes: eliminado,
+  });
   res.json({ ok: true });
 });
+
+router.getMemMovimientos = () => memMovimientos;
 
 module.exports = router;

@@ -259,7 +259,18 @@ router.put('/:id', auth, async (req, res) => {
 
   const idx = memCanales.findIndex(c => c.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
+  const antes = memCanales[idx];
   memCanales[idx] = { ...memCanales[idx], ...calc, observaciones };
+  await registrarBitacora(pool, {
+    usuario_id: req.user?.id,
+    usuario_nombre: req.user?.usuario,
+    accion: 'editar',
+    tabla: 'canales',
+    registro_id: req.params.id,
+    justificacion,
+    datos_antes: antes,
+    datos_despues: memCanales[idx],
+  });
   res.json(memCanales[idx]);
 });
 
@@ -288,10 +299,22 @@ router.delete('/:id', auth, async (req, res) => {
 
   const idx = memCanales.findIndex(c => c.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
-  memCanales.splice(idx, 1);
+  const [eliminado] = memCanales.splice(idx, 1);
+  await registrarBitacora(pool, {
+    usuario_id: req.user?.id,
+    usuario_nombre: req.user?.usuario,
+    accion: 'eliminar',
+    tabla: 'canales',
+    registro_id: req.params.id,
+    justificacion,
+    datos_antes: eliminado,
+  });
   res.json({ ok: true });
 });
 
 router.get('/tipos-ganado', auth, (_req, res) => res.json(TIPOS_GANADO));
+
+router.getMemLotes = () => memLotes;
+router.getMemCanales = () => memCanales;
 
 module.exports = router;

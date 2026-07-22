@@ -67,21 +67,20 @@ export default function InventarioInicial() {
   }
 
   async function meterAlInventario() {
-    if (!renglones.length || !tipoGanado) return;
+    if (!renglones.length) return;
     setGuardando(true);
     try {
       const payload = renglones.map((r) => ({
-        lote_id: null,
+        barcode: r.barcode,
         lote_num: r.lote,
         fecha,
-        tipo_ganado: tipoGanado,
+        tipo_ganado: tipoGanado || null,
         codigo: r.codigo,
         producto: r.producto,
-        cajas: 1,
         kilos: r.kilos,
         caja: r.caja,
       }));
-      const saved = await entradasApi.create(payload);
+      const saved = await entradasApi.inventarioInicial(payload);
       toast(`${saved.length} caja(s) agregada(s) al inventario`);
       setRenglones([]);
     } catch (err) {
@@ -93,7 +92,7 @@ export default function InventarioInicial() {
   }
 
   const totalKilos = renglones.reduce((s, r) => s + r.kilos, 0);
-  const puedeMeter = renglones.length > 0 && !!tipoGanado && !guardando;
+  const puedeMeter = renglones.length > 0 && !guardando;
 
   return (
     <div>
@@ -107,9 +106,9 @@ export default function InventarioInicial() {
           <Field label="Fecha">
             <Input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
           </Field>
-          <Field label="Tipo de ganado (aplica a todo el escaneo)">
+          <Field label="Tipo de ganado (opcional — aplica a todo el escaneo)">
             <Select value={tipoGanado} onChange={(e) => setTipoGanado(e.target.value)}>
-              <option value="">Selecciona…</option>
+              <option value="">Sin dato</option>
               {tiposGanado.map((t) => <option key={t} value={t}>{t}</option>)}
             </Select>
           </Field>
@@ -124,10 +123,8 @@ export default function InventarioInicial() {
               onKeyDown={onScanKeyDown}
               placeholder="600-26-1-15.70"
               autoFocus
-              disabled={!tipoGanado}
             />
           </Field>
-          {!tipoGanado && <p className="mt-1 text-xs text-red-500">Selecciona el tipo de ganado antes de escanear.</p>}
         </div>
 
         {renglones.length > 0 && (

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { reportesApi } from '../api/services';
 import { downloadCsv } from '../lib/csv';
-import { formatDateMX, formatNumber, todayISO } from '../lib/date';
+import { formatDateMX, formatNumber, formatTipoGanado, todayISO } from '../lib/date';
 import { Button, Card, Field, Input, PageHeader, Pill, Table } from '../components/ui';
 
 const TABS = [
@@ -61,7 +61,7 @@ export default function Reportes() {
       <tr key={`${r.codigo}-${i}`}>
         <td className="px-3 py-2">{r.codigo}</td>
         <td className="px-3 py-2">{r.producto}</td>
-        <td className="px-3 py-2">{r.tipo_ganado}</td>
+        <td className="px-3 py-2">{formatTipoGanado(r.tipo_ganado)}</td>
         <td className="px-3 py-2 font-bold text-brand-600">{r.total_cajas}</td>
         <td className="px-3 py-2 font-bold text-brand-600">{formatNumber(r.total_kilos, 2)}</td>
         <td className="px-3 py-2 max-w-[240px] truncate" title={r.cajas_lista}>{r.cajas_lista || '—'}</td>
@@ -71,7 +71,7 @@ export default function Reportes() {
       <tr key={r.id ?? i}>
         <td className="px-3 py-2 whitespace-nowrap">{formatDateMX(r.fecha)}</td>
         <td className="px-3 py-2">{r.lote_num}</td>
-        <td className="px-3 py-2">{r.tipo_ganado}</td>
+        <td className="px-3 py-2">{formatTipoGanado(r.tipo_ganado)}</td>
         <td className="px-3 py-2">{r.codigo}</td>
         <td className="px-3 py-2">{r.producto}</td>
         <td className="px-3 py-2">{r.cajas}</td>
@@ -82,7 +82,7 @@ export default function Reportes() {
       <tr key={`${r.codigo}-${i}`}>
         <td className="px-3 py-2">{r.codigo}</td>
         <td className="px-3 py-2">{r.producto}</td>
-        <td className="px-3 py-2">{r.tipo_ganado}</td>
+        <td className="px-3 py-2">{formatTipoGanado(r.tipo_ganado)}</td>
         <td className="px-3 py-2 font-bold text-brand-600">{r.total_cajas}</td>
         <td className="px-3 py-2 font-bold text-brand-600">{formatNumber(r.total_kilos, 2)}</td>
         <td className="px-3 py-2">{r.num_registros}</td>
@@ -118,7 +118,7 @@ export default function Reportes() {
       <tr key={`${r.codigo}-${i}`}>
         <td className="px-3 py-2">{r.codigo}</td>
         <td className="px-3 py-2">{r.producto}</td>
-        <td className="px-3 py-2">{r.tipo_ganado}</td>
+        <td className="px-3 py-2">{formatTipoGanado(r.tipo_ganado)}</td>
         <td className="px-3 py-2 font-bold text-brand-600">{r.cajas_existentes}</td>
         <td className="px-3 py-2 font-bold text-brand-600">{formatNumber(r.kilos_existentes, 2)}</td>
       </tr>

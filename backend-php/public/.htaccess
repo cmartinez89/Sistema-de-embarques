@@ -1,0 +1,17 @@
+RewriteEngine On
+
+# Algunos hosts en modo CGI/FastCGI no pasan el header Authorization a PHP.
+# Esto lo reinyecta como variable de entorno para que $_SERVER la reciba.
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule ^ - [E=HTTP_AUTHORIZATION:%1]
+
+# Todo /api/* lo maneja el front controller.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^api/ api/index.php [QSA,L]
+
+# Cualquier otra ruta que no sea un archivo/carpeta real cae al index.html
+# (SPA de React) para que el ruteo del lado del cliente funcione al
+# refrescar/entrar directo a una URL como /entradas/5.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]

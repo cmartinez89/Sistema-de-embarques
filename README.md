@@ -55,8 +55,13 @@ npm install
 npm run dev         # Vite dev server, puerto 5173, con proxy a /api -> localhost:3001
 ```
 
-**Usuarios de prueba** (creados por `setup.js`): `admin` / `admin123` (rol admin),
-`embarques` / `embarques123` (rol operador).
+**Usuarios de prueba** (creados por `setup.js`, solo para desarrollo local):
+`admin` / `admin123` (rol admin), `embarques` / `embarques123` (rol operador).
+
+**Producción**: las contraseñas de `admin` y `embarques` en
+embarques.carnesfinaselanden.com.mx ya fueron cambiadas y son distintas a las
+de arriba. Este repositorio es público, así que esas contraseñas **no se
+documentan aquí** — pregúntale al administrador del sistema si las necesitas.
 
 ## Roles
 

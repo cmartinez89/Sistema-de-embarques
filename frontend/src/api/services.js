@@ -26,11 +26,14 @@ export const canalesApi = {
 
 export const entradasApi = {
   productos: () => client.get('/entradas/productos').then((r) => r.data),
+  resumenPorLote: () => client.get('/entradas/resumen-por-lote').then((r) => r.data),
   list: (params) => client.get('/entradas', { params }).then((r) => r.data),
   create: (entradas) => client.post('/entradas', entradas).then((r) => r.data),
+  inventarioInicial: (entradas) => client.post('/entradas/inventario-inicial', entradas).then((r) => r.data),
   remove: (id, justificacion) => client.delete(`/entradas/${id}`, { data: { justificacion } }).then((r) => r.data),
   siguienteCaja: (params) => client.get('/entradas/siguiente-caja', { params }).then((r) => r.data),
   registrarCaja: (payload) => client.post('/entradas/caja', payload).then((r) => r.data),
+  buscarEtiqueta: (barcode) => client.get('/entradas/buscar-etiqueta', { params: { barcode } }).then((r) => r.data),
 };
 
 export const salidasApi = {

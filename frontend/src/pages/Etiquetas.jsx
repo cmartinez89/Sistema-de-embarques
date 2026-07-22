@@ -129,7 +129,7 @@ function BuscarEtiquetas() {
         {resultados.length > 0 && <Pill tone="gray">Resultados: {resultados.length}</Pill>}
         <div className="mt-3">
           <Table
-            columns={['Fecha', 'Lote', 'Código', 'Producto', 'Caja', 'Kilos', 'Código de barras', 'Impresa', 'Estado', '']}
+            columns={['Fecha', 'Lote', 'Código', 'Producto', 'Caja', 'Kilos', 'Código de barras', 'Impresa', 'Estado', 'Existencia', '']}
             empty={buscado && !loading && resultados.length === 0 ? 'Sin etiquetas para estos filtros' : (!buscado ? 'Define los filtros y presiona Buscar' : null)}
           >
             {resultados.map((e) => (
@@ -144,6 +144,9 @@ function BuscarEtiquetas() {
                 <td className="px-3 py-2">{e.veces_impresa}x</td>
                 <td className="px-3 py-2">
                   <Pill tone={e.activa ? 'green' : 'gray'}>{e.activa ? 'Activa' : 'Eliminada'}</Pill>
+                </td>
+                <td className="px-3 py-2">
+                  <Pill tone={e.embarcada ? 'blue' : 'teal'}>{e.embarcada ? 'Ya salió' : 'En existencia'}</Pill>
                 </td>
                 <td className="px-3 py-2">
                   {e.activa ? (

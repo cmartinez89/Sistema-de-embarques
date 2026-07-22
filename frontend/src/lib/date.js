@@ -16,3 +16,10 @@ export function formatNumber(value, decimals = 0) {
   const n = Number(value || 0);
   return n.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
+
+// El tipo de ganado puede faltar en cajas de inventario inicial cuyo origen
+// no se conoce — se identifica siempre como "SIN DATO" en vez de un espacio
+// en blanco.
+export function formatTipoGanado(value) {
+  return value || 'SIN DATO';
+}

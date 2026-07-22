@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { canalesApi } from '../api/services';
-import { formatDateMX, formatNumber } from '../lib/date';
+import { formatDateMX, formatNumber, formatTipoGanado } from '../lib/date';
 import { Button, Card, PageHeader, Pill, Table } from '../components/ui';
 
 export default function Canales() {
@@ -35,7 +35,7 @@ export default function Canales() {
               <td className="px-3 py-2 font-bold text-brand-600">{l.numero}</td>
               <td className="px-3 py-2 whitespace-nowrap">{formatDateMX(l.fecha)}</td>
               <td className="px-3 py-2 whitespace-nowrap">{formatDateMX(l.fecha_sacrificio)}</td>
-              <td className="px-3 py-2">{l.tipo_ganado}</td>
+              <td className="px-3 py-2">{formatTipoGanado(l.tipo_ganado)}</td>
               <td className="px-3 py-2">{l.romaneaje || '—'}</td>
               <td className="px-3 py-2"><Pill tone="blue">{l.num_canales}</Pill></td>
               <td className="px-3 py-2">{formatNumber(l.peso_caliente_total, 2)}</td>

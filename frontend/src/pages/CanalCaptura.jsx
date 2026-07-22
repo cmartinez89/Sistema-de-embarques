@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { canalesApi } from '../api/services';
 import { useToast } from '../context/ToastContext';
-import { todayISO, formatDateMX, formatNumber } from '../lib/date';
+import { todayISO, formatDateMX, formatNumber, formatTipoGanado } from '../lib/date';
 import {
   Banner,
   Button,
@@ -414,7 +414,7 @@ export default function CanalCaptura() {
               <p><span className="text-ink-400">Lote:</span> <span className="font-bold">{loteActivo.numero}</span></p>
               <p><span className="text-ink-400">Fecha:</span> {formatDateMX(loteActivo.fecha)}</p>
               <p><span className="text-ink-400">Sacrificio:</span> {formatDateMX(loteActivo.fecha_sacrificio)}</p>
-              <p><span className="text-ink-400">Tipo:</span> {loteActivo.tipo_ganado}</p>
+              <p><span className="text-ink-400">Tipo:</span> {formatTipoGanado(loteActivo.tipo_ganado)}</p>
               <p><span className="text-ink-400">Romaneaje:</span> {loteActivo.romaneaje || '—'}</p>
               {loteActivo.observaciones && <p className="col-span-2 sm:col-span-4"><span className="text-ink-400">Obs.:</span> {loteActivo.observaciones}</p>}
             </div>

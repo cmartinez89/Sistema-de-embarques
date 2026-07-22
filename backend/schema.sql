@@ -65,9 +65,12 @@ CREATE TABLE IF NOT EXISTS entradas (
   fecha       DATE        NOT NULL,
   tipo_ganado VARCHAR(50),
   codigo      VARCHAR(20),
+  caja        INT,
+  etiqueta_id INT,
   producto    VARCHAR(100),
   cajas       INT         DEFAULT 0,
-  kilos       DECIMAL(10,2) DEFAULT 0
+  kilos       DECIMAL(10,2) DEFAULT 0,
+  INDEX idx_entradas_etiqueta_id (etiqueta_id)
 );
 
 CREATE TABLE IF NOT EXISTS salidas (
@@ -82,6 +85,7 @@ CREATE TABLE IF NOT EXISTS salidas (
   tipo_ganado    VARCHAR(50),
   cajas          INT          DEFAULT 0,
   kilos          DECIMAL(10,2) DEFAULT 0,
+  barcode        VARCHAR(80),
   entregado_por  VARCHAR(100),
   observaciones  TEXT
 );
@@ -130,7 +134,7 @@ CREATE TABLE IF NOT EXISTS contador_cajas (
 -- El consecutivo de caja es por producto dentro del lote (lote_id, codigo).
 CREATE TABLE IF NOT EXISTS etiquetas (
   id            INT AUTO_INCREMENT PRIMARY KEY,
-  lote_id       INT           NOT NULL,
+  lote_id       INT,
   lote_num      VARCHAR(50)   NOT NULL,
   codigo        VARCHAR(20)   NOT NULL,
   producto      VARCHAR(100),
@@ -155,7 +159,7 @@ CREATE TABLE IF NOT EXISTS bitacora (
   id             INT AUTO_INCREMENT PRIMARY KEY,
   usuario_id     INT,
   usuario_nombre VARCHAR(100),
-  accion         VARCHAR(20)  NOT NULL,   -- 'crear' | 'editar' | 'eliminar'
+  accion         VARCHAR(20)  NOT NULL,   -- 'editar' | 'eliminar' | 'autorizar' | 'rechazar'
   tabla          VARCHAR(50)  NOT NULL,
   registro_id    INT,
   justificacion  TEXT         NOT NULL,

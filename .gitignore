@@ -6,13 +6,19 @@ node_modules/
 .env.local
 backend/.env
 backend/.env.local
+backend-php/public/api/config.php
 
 # Builds
 frontend/dist/
 backend/public/
+backend-php/public/assets/
+backend-php/public/index.html
+backend-php/public/icons.svg
+backend-php/public/logo-anden.png
 
 # Archivos subidos por usuarios (PDFs de romaneaje) — no versionar
 backend/uploads/
+backend-php/uploads/
 
 # Logs
 *.log

@@ -35,6 +35,11 @@ const NAV = [
       { to: '/inventario-inicial', label: 'Inventario inicial' },
     ],
   },
+  {
+    label: 'Dispositivos',
+    icon: '🔌',
+    items: [{ to: '/bascula', label: 'Báscula' }],
+  },
 ];
 
 const NAV_ADMIN = {
@@ -71,7 +76,7 @@ export default function Sidebar() {
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {nav.map((group) => (
           <div key={group.label}>
             <div className={`mb-1.5 flex items-center gap-2 px-2 ${collapsed ? 'justify-center' : ''}`}>

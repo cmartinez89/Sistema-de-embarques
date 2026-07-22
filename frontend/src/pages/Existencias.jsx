@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { existenciasApi } from '../api/services';
-import { formatNumber, todayISO } from '../lib/date';
+import { formatNumber, formatTipoGanado, todayISO } from '../lib/date';
 import { Button, Card, Field, Input, PageHeader, Pill, Table } from '../components/ui';
 
 export default function Existencias() {
@@ -71,7 +71,7 @@ export default function Existencias() {
             <tr key={`${d.codigo}-${d.tipo_ganado}`}>
               <td className="px-3 py-2 font-medium">{d.codigo}</td>
               <td className="px-3 py-2">{d.producto}</td>
-              <td className="px-3 py-2">{d.tipo_ganado}</td>
+              <td className="px-3 py-2">{formatTipoGanado(d.tipo_ganado)}</td>
               <td className="px-3 py-2 text-ink-400">{d.cajas_entradas} / {formatNumber(d.kilos_entradas, 2)}</td>
               <td className="px-3 py-2 text-ink-400">{d.cajas_salidas} / {formatNumber(d.kilos_salidas, 2)}</td>
               <td className="px-3 py-2 text-ink-400">{d.cajas_movimientos} / {formatNumber(d.kilos_movimientos, 2)}</td>

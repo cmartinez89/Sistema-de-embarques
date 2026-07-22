@@ -47,20 +47,44 @@ router.get('/productos', auth, async (req, res) => {
 
 /* ─── Entradas ─── */
 
+router.get('/resumen-por-lote', auth, async (req, res) => {
+  if (await dbOk()) {
+    try {
+      const [rows] = await pool.query(`
+        SELECT lote_id, COALESCE(SUM(cajas),0) AS num_cajas, COALESCE(SUM(kilos),0) AS kilos_total
+        FROM entradas
+        GROUP BY lote_id
+      `);
+      return res.json(rows);
+    } catch { /* tabla no existe */ }
+  }
+  const map = {};
+  for (const e of memEntradas) {
+    const key = e.lote_id;
+    if (!map[key]) map[key] = { lote_id: key, num_cajas: 0, kilos_total: 0 };
+    map[key].num_cajas += Number(e.cajas || 0);
+    map[key].kilos_total += Number(e.kilos || 0);
+  }
+  res.json(Object.values(map));
+});
+
 router.get('/', auth, async (req, res) => {
   const { lote_id, fecha } = req.query;
   if (await dbOk()) {
     try {
-      let q = 'SELECT * FROM entradas WHERE 1=1';
+      let q = `SELECT en.*, et.barcode
+                FROM entradas en
+                LEFT JOIN etiquetas et ON et.id = en.etiqueta_id
+                WHERE 1=1`;
       const p = [];
-      if (lote_id) { q += ' AND lote_id=?'; p.push(lote_id); }
-      if (fecha)   { q += ' AND fecha=?';   p.push(fecha); }
-      q += ' ORDER BY id';
+      if (lote_id) { q += ' AND en.lote_id=?'; p.push(lote_id); }
+      if (fecha)   { q += ' AND en.fecha=?';   p.push(fecha); }
+      q += ' ORDER BY en.id';
       const [rows] = await pool.query(q, p);
       return res.json(rows);
     } catch { /* tabla no existe */ }
   }
-  let rows = memEntradas;
+  let rows = memEntradas.map((e) => ({ ...e, barcode: memEtiquetas.find((et) => et.id === e.etiqueta_id)?.barcode }));
   if (lote_id) rows = rows.filter(e => String(e.lote_id) === String(lote_id));
   if (fecha)   rows = rows.filter(e => e.fecha === fecha);
   res.json(rows);
@@ -95,6 +119,63 @@ router.post('/', auth, async (req, res) => {
   res.json(saved);
 });
 
+/* ─── Inventario inicial: cajas físicas que ya existen (con etiqueta ya
+   impresa, de antes de usar el sistema o de un conteo físico). A diferencia
+   de /caja, aquí el código de barras ya lo trae la caja escaneada — no se
+   genera uno nuevo, y no hay lote_id real (queda NULL). Crea tanto la
+   entrada como la etiqueta para que la caja se pueda escanear después en
+   Salidas igual que cualquier otra. ─── */
+router.post('/inventario-inicial', auth, async (req, res) => {
+  const items = Array.isArray(req.body) ? req.body : [req.body];
+  const saved = [];
+
+  if (await dbOk()) {
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      for (const item of items) {
+        const { barcode, lote_num, tipo_ganado, codigo, producto, kilos, caja, fecha } = item;
+        const [etRes] = await conn.query(
+          `INSERT INTO etiquetas (lote_id, lote_num, codigo, producto, caja, kilos, barcode, fecha, romaneaje, usuario_id)
+           VALUES (NULL,?,?,?,?,?,?,?,NULL,?)`,
+          [lote_num, codigo, producto, caja, kilos, barcode, fecha, req.user?.id || null]
+        );
+        const [enRes] = await conn.query(
+          `INSERT INTO entradas (lote_id, lote_num, fecha, tipo_ganado, codigo, producto, cajas, kilos, caja, etiqueta_id)
+           VALUES (NULL,?,?,?,?,?,1,?,?,?)`,
+          [lote_num, fecha, tipo_ganado, codigo, producto, kilos, caja, etRes.insertId]
+        );
+        const [[entrada]] = await conn.query('SELECT * FROM entradas WHERE id=?', [enRes.insertId]);
+        saved.push(entrada);
+      }
+      await conn.commit();
+      return res.json(saved);
+    } catch (err) {
+      await conn.rollback();
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ error: 'Una de estas cajas ya fue agregada antes (código de barras duplicado)' });
+      }
+      console.error(err);
+      return res.status(500).json({ error: 'No se pudo agregar al inventario' });
+    } finally {
+      conn.release();
+    }
+  }
+
+  for (const item of items) {
+    const { barcode, lote_num, tipo_ganado, codigo, producto, kilos, caja, fecha } = item;
+    if (memEtiquetas.some((e) => e.barcode === barcode)) {
+      return res.status(409).json({ error: `La caja ${barcode} ya fue agregada antes` });
+    }
+    const etiqueta = { id: etiquetaSeq++, lote_id: null, lote_num, tipo_ganado, codigo, producto, caja, kilos, barcode, fecha, romaneaje: null, activa: true, veces_impresa: 1 };
+    memEtiquetas.push(etiqueta);
+    const entrada = { id: entradaSeq++, lote_id: null, lote_num, fecha, tipo_ganado, codigo, producto, cajas: 1, kilos, caja, etiqueta_id: etiqueta.id };
+    memEntradas.push(entrada);
+    saved.push(entrada);
+  }
+  res.json(saved);
+});
+
 router.delete('/:id', auth, async (req, res) => {
   const justificacion = (req.body?.justificacion || '').trim();
   if (!justificacion) {
@@ -121,7 +202,16 @@ router.delete('/:id', auth, async (req, res) => {
   }
   const idx = memEntradas.findIndex(e => e.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'No encontrado' });
-  memEntradas.splice(idx, 1);
+  const [eliminado] = memEntradas.splice(idx, 1);
+  await registrarBitacora(pool, {
+    usuario_id: req.user?.id,
+    usuario_nombre: req.user?.usuario,
+    accion: 'eliminar',
+    tabla: 'entradas',
+    registro_id: req.params.id,
+    justificacion,
+    datos_antes: eliminado,
+  });
   res.json({ ok: true });
 });
 
@@ -202,12 +292,41 @@ router.post('/caja', auth, async (req, res) => {
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }
-  const etiqueta = { id: etiquetaSeq++, lote_id, lote_num, codigo, producto, caja, kilos, barcode, fecha, romaneaje: romaneaje || null, activa: true, veces_impresa: 1 };
+  const etiqueta = { id: etiquetaSeq++, lote_id, lote_num, tipo_ganado, codigo, producto, caja, kilos, barcode, fecha, romaneaje: romaneaje || null, activa: true, veces_impresa: 1 };
   memEtiquetas.push(etiqueta);
   const entrada = { id: entradaSeq++, lote_id, lote_num, fecha, tipo_ganado, codigo, producto, cajas: 1, kilos, caja, etiqueta_id: etiqueta.id };
   memEntradas.push(entrada);
   const zpl = renderZplEtiqueta({ lote: lote_num, codigo, caja, kilos, producto, fecha, romaneaje });
   res.json({ entrada, etiqueta, zpl });
 });
+
+/* ─── Escaneo de caja para Salidas: busca una etiqueta ya emitida por su
+   código de barras y regresa lote, tipo de ganado, producto y kilos. ─── */
+router.get('/buscar-etiqueta', auth, async (req, res) => {
+  const { barcode } = req.query;
+  if (!barcode) return res.status(400).json({ error: 'Falta el código de barras' });
+
+  if (await dbOk()) {
+    try {
+      const [rows] = await pool.query(
+        `SELECT et.*, en.tipo_ganado
+         FROM etiquetas et
+         LEFT JOIN entradas en ON en.etiqueta_id = et.id
+         WHERE et.barcode = ?`,
+        [barcode]
+      );
+      if (!rows.length) return res.status(404).json({ error: 'Caja no encontrada' });
+      if (!rows[0].activa) return res.status(400).json({ error: 'Esta etiqueta fue anulada' });
+      return res.json(rows[0]);
+    } catch { /* fallback */ }
+  }
+  const etiqueta = memEtiquetas.find((e) => e.barcode === barcode);
+  if (!etiqueta) return res.status(404).json({ error: 'Caja no encontrada' });
+  if (!etiqueta.activa) return res.status(400).json({ error: 'Esta etiqueta fue anulada' });
+  res.json(etiqueta);
+});
+
+router.getMemEntradas = () => memEntradas;
+router.getMemEtiquetas = () => memEtiquetas;
 
 module.exports = router;

@@ -34,6 +34,15 @@ async function tableExists(table) {
   return rows[0].n > 0;
 }
 
+async function columnNullable(table, column) {
+  const [rows] = await pool.query(
+    `SELECT IS_NULLABLE FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+    [table, column]
+  );
+  return rows[0]?.IS_NULLABLE === 'YES';
+}
+
 async function main() {
   console.log('Conectando a la base de datos...');
 
@@ -117,6 +126,22 @@ async function main() {
     console.log('✓ salidas.observaciones agregada');
   } else {
     console.log('· salidas.observaciones ya existía');
+  }
+
+  if (!(await columnExists('salidas', 'barcode'))) {
+    await pool.query('ALTER TABLE salidas ADD COLUMN barcode VARCHAR(80) NULL AFTER kilos');
+    console.log('✓ salidas.barcode agregada');
+  } else {
+    console.log('· salidas.barcode ya existía');
+  }
+
+  // Inventario inicial: cajas físicas preexistentes sin lote real capturado
+  // en el sistema — su etiqueta necesita poder guardarse con lote_id NULL.
+  if (!(await columnNullable('etiquetas', 'lote_id'))) {
+    await pool.query('ALTER TABLE etiquetas MODIFY lote_id INT NULL');
+    console.log('✓ etiquetas.lote_id ahora acepta NULL');
+  } else {
+    console.log('· etiquetas.lote_id ya aceptaba NULL');
   }
 
   await pool.query(`
